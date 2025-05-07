@@ -1,0 +1,169 @@
+#include <SPI.h>
+#include "LCD_Driver.h"
+#include "GUI_Paint.h"
+#include "image.h"
+
+void setup()
+{
+Config_Init();
+LCD_Init();
+LCD_Clear(WHITE);
+LCD_SetBacklight(100);
+Paint_NewImage(LCD_WIDTH, LCD_HEIGHT, 0, WHITE);
+Paint_Clear(WHITE);
+Paint_SetRotate(180);
+// Head
+Paint_DrawCircle(80, 80, 40, BLACK, DOT_PIXEL_2X2, DRAW_FILL_EMPTY);
+
+// Eyes
+Paint_DrawCircle(65, 70, 5, BLACK, DOT_PIXEL_2X2, DRAW_FILL_FULL);
+Paint_DrawCircle(95, 70, 5, BLACK, DOT_PIXEL_2X2, DRAW_FILL_FULL);
+
+// Smile (just a line or arc – here, a line smile)
+Paint_DrawLine(65, 95, 95, 95, BLACK, DOT_PIXEL_2X2, LINE_STYLE_SOLID);
+}
+
+void timesetup(){
+	
+}
+Code ZIP 
+ANIMATING FACE (not finished and probably has errors)
+#include <SPI.h>
+#include "LCD_Driver.h"
+#include "GUI_Paint.h"
+#include "image.h"
+
+
+void setup()
+{
+  Config_Init();
+  LCD_Init();
+  LCD_Clear(0xffff);
+  Paint_NewImage(LCD_WIDTH, LCD_HEIGHT, 0, WHITE);
+  Paint_Clear(WHITE);
+Paint_SetRotate(180);
+}
+
+void drawLOGOS(){
+  Paint_DrawLine(75,230,65,200, BLACK, DOT_PIXEL_2X2,LINE_STYLE_SOLID);
+  Paint_DrawLine(75,230,85,200, BLACK, DOT_PIXEL_2X2, LINE_STYLE_SOLID);
+  Paint_DrawCircle(65,190,10, RED, DOT_PIXEL_1X1, DRAW_FILL_FILL);
+  Paint_DrawCircle(85,190,10, RED, DOT_PIXEL_1X1, DRAW_FILL_FILL);
+}
+
+void drawpet()
+{
+  if (toggle) {
+    // Head
+    Paint_DrawCircle(80, 80, 40, BLACK, DOT_PIXEL_2X2, DRAW_FILL_EMPTY);
+
+
+    // Eyes
+    Paint_DrawCircle(65, 70, 5, BLACK, DOT_PIXEL_2X2, DRAW_FILL_FULL);
+    Paint_DrawCircle(95, 70, 5, BLACK, DOT_PIXEL_2X2, DRAW_FILL_FULL);
+
+
+    // Smile (just a line or arc – here, a line smile)
+    Paint_DrawLine(65, 95, 95, 95, BLACK, DOT_PIXEL_2X2, LINE_STYLE_SOLID);
+  }else{
+    //HEAD
+    Paint_DrawCircle(85,80,40, Black, DOT_PIXEL_2x2, DRAW_FILL_EMPTY);
+    //eyes
+    Paint_DrawCircle(70,70,5, BLACK, DOT_PIXEL_2X2, DRAW_FILL_EMPTY);
+    Paint_DrawCircle(100,70,5, BLACK, DOT_PIXEL_2X2, DRAW_FILL_EMPTY);
+    //MOUTH
+    Paint_DrawCircle(85,100,10, DOT_PIXEL_2X2, DRAW_FILL_FULL);
+    Paint_DrawCircle(85,100,10, DOT_PIXEL_2X2, DRAW_FILL_EMPTY);
+  }
+  LCD_Display();
+  toggle = !toggle;
+  delay(1000);
+}
+
+//Hunger part
+int hunger = 2; 
+const int MAX_HUNGER = 4;
+const int MIN_HUNGER = 0;
+bool isBeeping = false;
+
+
+void feedMeal(){
+if(hunger<MAX_HUNGER){
+  hunger++;
+  Serial.println("Tamagotchi ate a meal!");
+}else{
+  Serial.println("Tamagotchi is already full!");
+}
+  Updatedisplay();
+}
+
+
+void Updatedisplay(){
+	Paint_clear(WHITE);
+  drawPet();                
+  drawHungerBar();   
+  drawHappinessBar();
+  LCD_Display();
+}
+
+void drawHungerBar() {
+ checkHunger();
+}
+
+void drawHappinessBar() {
+  checkHappiness();
+}
+
+void checkHunger() {
+  if (hunger == 4) {
+    drawHeart(30, 50, 10, RED);    
+    drawHeart(50, 50, 10, RED);    
+    drawHeart(70, 50, 10, RED);   
+    drawHeart(90, 50, 10, RED);   
+  } else if (hunger == 3) {
+    drawHeart(30, 50, 10, RED);     
+    drawHeart(50, 50, 10, RED);   
+    drawHeart(70, 50, 10, RED);   
+    drawHeart(90, 50, 10, WHITE);  
+  } else if (hunger == 2) {
+    drawHeart(30, 50, 10, RED);   
+    drawHeart(50, 50, 10, RED);    
+    drawHeart(70, 50, 10, WHITE);   
+    drawHeart(90, 50, 10, WHITE);   
+  } else if (hunger == 1) {
+    drawHeart(30, 50, 10, RED);     
+    drawHeart(50, 50, 10, WHITE);   
+    drawHeart(70, 50, 10, WHITE);   
+    drawHeart(90, 50, 10, WHITE);  
+  } else if (hunger == 0) {
+    drawHeart(30, 50, 10, WHITE);  
+    drawHeart(50, 50, 10, WHITE);   
+    drawHeart(70, 50, 10, WHITE);  
+    drawHeart(90, 50, 10, WHITE);   
+    if (!isBeeping) {
+      beepAlert(); 
+      isBeeping = true; 
+    }
+  }
+}
+
+void beepAlert() {
+  
+}
+
+void stopBeep() {
+  
+}
+
+void loop(){
+  checkHunger();
+}
+
+void checkHunger(){
+  if (hunger <= MIN_HUNGER && !isBeeping) {
+    beepAlert();
+  } else if (hunger > MIN_HUNGER && isBeeping) {
+    stopBeep();
+  }
+}
+
