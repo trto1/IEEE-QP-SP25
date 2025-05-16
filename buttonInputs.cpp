@@ -1,3 +1,8 @@
+// define HIGH and INPUT (maybe library constants)
+// include the libraries for digitalRead
+// what's button1,2,3Pin??
+
+
 // constants won't change. They're used here to set pin numbers:
 const int button1Pin = 2;  // the number of the pushbutton pin
 const int button2Pin = 3;
@@ -15,14 +20,17 @@ void setup() {
   pinMode(button3Pin, INPUT);
 }
 
-void loop() {
+
+
+// I think we can only have one void loop(), so this part needs to be merged with main.cpp
+void loop() { 
   // read the state of the pushbutton value:
   button1State = digitalRead(button1Pin);
   button2State = digitalRead(button2Pin);
   button3State = digitalRead(button3Pin);
 
   // check if the pushbutton is pressed. If it is, the buttonState is HIGH:
-  if (button1State == HIGH) {
+  if (button1State == HIGH) { // next?
     // do whatever we want
   } else {
     // do other stuff
@@ -34,9 +42,11 @@ void loop() {
     // do other stuff
   }
   
-  if (button3State == HIGH) {
-    // do whatever we want
-  } else {
-    // do other stuff
-  }
+  if (button3State == HIGH) { //im assuming this is enter
+    //make a beep sound here?
+    if (user_chose_feeding) {
+      feedPet();
+    }
+  } 
 }
+

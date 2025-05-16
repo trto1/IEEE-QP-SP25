@@ -20,3 +20,5 @@ This is where we do live stuff while the machine is on, including:
         updateHungerLive();
         some sort of delay?
 }`
+
+Extras: look into eeprom/flash system, as we need to save the last boot on time of the machine
