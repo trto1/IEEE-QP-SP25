@@ -8,10 +8,12 @@ int SEC_IN_HOUR = 3600;
 int now = 0;
 int previous = 0;
 DS3231 clock;
+int test12;
+int test21;
 
 void setup() {
     Serial.begin(9600);
-    Serial.println("Initialize DS3231");;
+    Serial.println("Initialize DS3231");
     clock.begin();
     // Manual (Year, Month, Day, Hour, Minute, Second)
     clock.setDateTime(2025, 5, 16, 4, 20, 0);
@@ -23,11 +25,22 @@ void setup() {
  *         now or previous
 */
 void getTime (int& globalTime) {
-    globalTime = rtc.getDateTime().unixtime;
+    globalTime = clock.getDateTime().unixtime;
 }
 
-int timePassedInHours () {
-    int secondsPassed = now - previous;
-    int hoursPassed = secondsPassed / SEC_IN_HOUR;
-    return hoursPassed;
+int timePassedInHours (int test1, int test2) {
+    //int secondsPassed = now - previous;
+    int secondsPassed = test2 - test1;
+    //int hoursPassed = secondsPassed / SEC_IN_HOUR;
+    //return hoursPassed;
+    return secondsPassed;
 }
+
+void loop () {
+  test12 = clock.getDateTime().unixtime;
+  delay (5000);
+  test21 = clock.getDateTime().unixtime;
+  Serial.println (timePassedInHours(test12, test21));
+  Serial.println ("!!!!!");
+}
+
