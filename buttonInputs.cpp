@@ -1,7 +1,9 @@
-// define HIGH and INPUT (maybe library constants)
+// define HIGH and INPUT (maybe library constants?)
 // include the libraries for digitalRead
 // what's button1,2,3Pin??
 
+//Global variable
+bool feed = false; //bool for selecting feed symbol
 
 // constants won't change. They're used here to set pin numbers:
 const int button1Pin = 2;  // the number of the pushbutton pin
@@ -44,7 +46,7 @@ void loop() {
   
   if (button3State == HIGH) { //im assuming this is enter
     //make a beep sound here?
-    if (user_chose_feeding) {
+    if (feed == true) {
       feedPet();
     }
   } 
