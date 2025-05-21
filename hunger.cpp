@@ -32,7 +32,7 @@ void loop(){
 }
 
 void deductHunger () { //consider combine this with getHoursPassed if we can
-  int hoursPassed = timePassedInHours ();
+  int hoursPassed = timePassedInHours();
   int hungerLeft = hunger - (hoursPassed / 3);
   if (hungerLeft < 0) {
     hunger = 0;

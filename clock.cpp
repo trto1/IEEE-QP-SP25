@@ -8,9 +8,12 @@ int SEC_IN_HOUR = 3600;
 int now = 0;
 int lastFedTime = 0;
 DS3231 clock;
+int test12;
+int test21;
 
 void setup() {
     Serial.begin(9600);
+    Serial.println("Initialize DS3231");
     Serial.println("Initialize DS3231");
     clock.begin();
     // Manual (Year, Month, Day, Hour, Minute, Second)
