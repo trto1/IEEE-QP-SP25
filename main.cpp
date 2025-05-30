@@ -1,10 +1,18 @@
 #include <Wire.h>
 #include <DS3231.h>
+#include <EEPROM.h>
+#include <SPI.h>
+#include "LCD_Driver.h"
+#include "GUI_Paint.h"
+#include "image.h"
 
 //Global constants
-#define SEC_IN_HOUR 3600;
-#define MAX_HUNGER = 4;
-#define MIN_HUNGER = 0;
+#define SEC_IN_HOUR 3600
+#define MAX_HUNGER 4
+#define MIN_HUNGER 0
+
+#define ADDR_HUNGER 0
+#define ADDR_LASTFED 4 // store lastFedTime as 4-byte int
 
 #define PET_LEFT 30 // box coordinates for the pet (so we can do idle animation)
 #define PET_RIGHT 40
@@ -31,13 +39,17 @@ void setup() {
     //Starting Arduino Communication
     Serial.begin(9600);
     EEPROM.begin();
-    if (EEPROM_STARTED) { //aka its not the first time, this is a one-time check
-        EEPROM.read (savedHunger, hunger); //the savedHunger might be an address
-        EEPROM.read (savedLastFedTime, lastFedTime);
+    if (EEPROM.read(100) == 1) { //aka its not the first time, this is a one-time check
+        EEPROM.get (ADDR_HUNGER, hunger); 
+        EEPROM.get(ADDR_LASTFED, lastFedTime);
     }
     else {
         welcomeUser(); //just prints a welcome user line and mark eeprom as intialized somehow; might also need to deal with some variables
-        //we might be able to add name for the pet if we have time
+        hunger = MAX_HUNGER;
+        getTime(lastFedTime);
+        EEPROM.put(ADDR_HUNGER, hunger);
+        EEPROM.put(ADDR_LASTFED, lastFedTime);
+        EEPROM.write(100, 1); // initialization flag
     }
 
     // Initializing the LCD Screen
@@ -79,7 +91,10 @@ void loop () {
 //Button Inputs
 
 void handleInputs () {
-    
+    if (digitalRead(FEED_BUTTON_PIN) == LOW) {
+        feedPet();
+        delay(500);
+    }
 }
 
 //==============================================
@@ -133,16 +148,19 @@ void deductHunger () {
   else {
     hunger = hungerLeft;
     getTime (lastFedTime); //this only resets if at least one heart is deducted
-    eraseHeartHunger();
+    for (int i = hunger + 1; i <= MAX_HUNGER; i++) {
+        eraseHeartHunger(i, 1);
+    }
   }
 }
 
-void drawHungerBar () {
-    if (hunger == 0) {
-        return;
-    }
+void drawHungerBar() {
+    if (hunger == 0) return;
     for (int i = 1; i <= hunger; i++) {
-        addHeartHunger (i);
+        int heartNumber = i - 1;
+        int cx = (HUNGER_LEFT + HUNGER_RIGHT) / 2 + (HEART_DISTANCE * heartNumber);
+        int cy = (HUNGER_TOP + HUNGER_BOTTOM) / 2;
+        addHeartHunger(cx, cy, 1);
     }
 }
 
@@ -154,38 +172,100 @@ void feedPet () {
     hunger++;
     getTime (lastFedTime); //effectively resets the timer everytime the pet is fed
     Serial.println("Tamagotchi ate a meal!"); 
-    addHeartHunger (hunger);
+
+    int heartNumber = hunger - 1;
+    int cx = (HUNGER_LEFT + HUNGER_RIGHT) / 2 + (HEART_DISTANCE * heartNumber);
+    int cy = (HUNGER_TOP + HUNGER_BOTTOM) / 2;
+    addHeartHunger(cx, cy, 1);
   }
   return;
 }
 
-void addHeartHunger (int whichHeart) {
-    int heartNumber = whichHeart - 1;
-    int centerX = (HUNGER_LEFT + HUNGER_RIGHT) / 2 + (HEART_DISTANCE*heartNumber);
-    int centerY = (HUNGER_TOP + HUNGER_BOTTOM) / 2 + (HEART_DISTANCE*heartNumber);
-    int radius = something();
+void addHeartHunger (int cx, int cy, int scale) {
+    // int heartNumber = whichHeart - 1;
+    // int centerX = (HUNGER_LEFT + HUNGER_RIGHT) / 2 + (HEART_DISTANCE*heartNumber);
+    // int centerY = (HUNGER_TOP + HUNGER_BOTTOM) / 2 + (HEART_DISTANCE*heartNumber);
+    // int radius = something();
 
-    Paint_DrawCircle (centerX, centerY, radius, color, DRAW_FILL_FULL); //left and right top arc
-    Paint_DrawCircle (); 
-    Paint_DrawLine (); //the bottom triangle lines
-    Paint_DrawLine();
+    // Paint_DrawCircle (centerX, centerY, radius, color, DRAW_FILL_FULL); //left and right top arc
+    // Paint_DrawCircle (); 
+    // Paint_DrawLine (); //the bottom triangle lines
+    // Paint_DrawLine();
+
+    const int N = 120;      // number of segments around the heart
+    int x_prev = 0, y_prev = 0;
+    int x_curr = 0, y_curr = 0;
+
+    for (int i = 0; i <= N; i++) {
+        float t = 2 * PI * i / N;
+        // Parametric heart curve:
+        float hx = 16 * pow(sin(t), 3);
+        float hy = 13 * cos(t)
+                 - 5 * cos(2 * t)
+                 - 2 * cos(3 * t)
+                 -     cos(4 * t);
+
+        // Scale and translate into pixel coordinates
+        x_curr = cx + int(hx * scale);
+        y_curr = cy - int(hy * scale);
+
+        if (i > 0) {
+            Paint_DrawLine(
+                x_prev, y_prev,
+                x_curr, y_curr,
+                RED,
+                DOT_PIXEL_1X1,
+                LINE_STYLE_SOLID
+            );
+        }
+
+        x_prev = x_curr;
+        y_prev = y_curr;
+    }
+
 }
 
-void eraseHeartHunger (int whichHeart) {
+void eraseHeartHunger(int whichHeart, int scale) {
     int heartNumber = whichHeart - 1;
-    Paint_DrawRectangle (HUNGER_LEFT + (HEART_DISTANCE*heartNumber), HUNGER_TOP + (HEART_DISTANCE*heartNumber), HUNGER_RIGHT + (HEART_DISTANCE*heartNumber), HUNGER_BOTTOM + (HEART_DISTANCE*heartNumber), WHITE, DRAW_FILL_FULL);
+    int cx = (HUNGER_LEFT + HUNGER_RIGHT) / 2 + (HEART_DISTANCE * heartNumber);
+    int cy = (HUNGER_TOP + HUNGER_BOTTOM) / 2;
+
+    int eraseWidth = 32 * scale;
+    int eraseHeight = 30 * scale;
+
+    int x1 = cx - eraseWidth / 2;
+    int y1 = cy - eraseHeight / 2;
+    int x2 = cx + eraseWidth / 2;
+    int y2 = cy + eraseHeight / 2;
+
+    Paint_DrawRectangle(x1, y1, x2, y2, WHITE, DRAW_FILL_FULL);
 }
 
-void petIsDead () {
-    Paint_Clear(WHITE);
-    Paint_DrawString_EN(x, y, "Pet starved and died", &FontXX, color_background, color_foreground);
-    delay (2000);
-    Paint_Clear(WHITE);
-    Paint_DrawString_EN(x, y, "Restarting the game...", &FontXX, color_background, color_foreground);
 
-    //reset variables
-    getTime (lastFedTime);
-    hunger = 4;
+// void petIsDead () {
+    // Paint_Clear(WHITE);
+    // Paint_DrawString_EN(x, y, "Pet starved and died", &FontXX, color_background, color_foreground);
+    // delay (2000);
+    // Paint_Clear(WHITE);
+    // Paint_DrawString_EN(x, y, "Restarting the game...", &FontXX, color_background, color_foreground);
+
+    // //reset variables
+    // getTime (lastFedTime);
+    // hunger = 4;
+
+    // drawPet();
+    // drawHungerBar();
+// }
+void petIsDead() {
+    Paint_Clear(WHITE);
+    Paint_DrawString_EN(10, 50, "Pet starved and died", &Font16, WHITE, RED);
+    delay(2000);
+    Paint_Clear(WHITE);
+    Paint_DrawString_EN(10, 50, "Restarting the game...", &Font16, WHITE, BLACK);
+    delay(2000);
+
+    getTime(lastFedTime);
+    hunger = MAX_HUNGER;
 
     drawPet();
     drawHungerBar();
