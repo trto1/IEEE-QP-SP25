@@ -116,6 +116,16 @@ int timePassedInHours () {
 // Pet
 
 void drawPet () {
+    //// Head
+Paint_DrawCircle(80, 150, 40, BLUE, DOT_PIXEL_2X2, DRAW_FILL_FULL);
+Paint_DrawCircle(80, 150, 40, BLACK, DOT_PIXEL_2X2, DRAW_FILL_EMPTY);
+
+// Eyes
+Paint_DrawCircle(65, 140, 5, BLACK, DOT_PIXEL_2X2, DRAW_FILL_FULL);
+Paint_DrawCircle(95, 140, 5, BLACK, DOT_PIXEL_2X2, DRAW_FILL_FULL);
+
+// Smile (just a line or arc – here, a line smile)
+Paint_DrawLine(65, 165, 95, 165, BLACK, DOT_PIXEL_2X2, LINE_STYLE_SOLID);
     return;
 }
 
