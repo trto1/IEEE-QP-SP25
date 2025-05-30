@@ -14,16 +14,16 @@
 #define ADDR_HUNGER 0
 #define ADDR_LASTFED 4 // store lastFedTime as 4-byte int
 
-#define PET_LEFT 30 // box coordinates for the pet (so we can do idle animation)
-#define PET_RIGHT 40
-#define PET_TOP 50
-#define PET_BOTTOM 20
+// #define PET_LEFT 30 // box coordinates for the pet (so we can do idle animation)
+// #define PET_RIGHT 40
+// #define PET_TOP 50
+// #define PET_BOTTOM 20
 
-#define HUNGER_LEFT 5 // box coord. for the first heart of hunger bar
-#define HUNGER_RIGHT 10
-#define HUNGER_TOP 100
-#define HUNGER_BOTTOM 90
-#define HEART_DISTANCE HUNGER_RIGHT - HUNGER_LEFT
+// #define HUNGER_LEFT 5 // box coord. for the first heart of hunger bar
+// #define HUNGER_RIGHT 10
+// #define HUNGER_TOP 100
+// #define HUNGER_BOTTOM 90
+// #define HEART_DISTANCE HUNGER_RIGHT - HUNGER_LEFT
 
 //==============================================
 
@@ -117,15 +117,13 @@ int timePassedInHours () {
 
 void drawPet () {
     //// Head
-Paint_DrawCircle(80, 150, 40, BLUE, DOT_PIXEL_2X2, DRAW_FILL_FULL);
-Paint_DrawCircle(80, 150, 40, BLACK, DOT_PIXEL_2X2, DRAW_FILL_EMPTY);
-
-// Eyes
-Paint_DrawCircle(65, 140, 5, BLACK, DOT_PIXEL_2X2, DRAW_FILL_FULL);
-Paint_DrawCircle(95, 140, 5, BLACK, DOT_PIXEL_2X2, DRAW_FILL_FULL);
-
-// Smile (just a line or arc – here, a line smile)
-Paint_DrawLine(65, 165, 95, 165, BLACK, DOT_PIXEL_2X2, LINE_STYLE_SOLID);
+    Paint_DrawCircle(80, 150, 40, BLUE, DOT_PIXEL_2X2, DRAW_FILL_FULL);
+    Paint_DrawCircle(80, 150, 40, BLACK, DOT_PIXEL_2X2, DRAW_FILL_EMPTY);
+    // Eyes
+    Paint_DrawCircle(65, 140, 5, BLACK, DOT_PIXEL_2X2, DRAW_FILL_FULL);
+    Paint_DrawCircle(95, 140, 5, BLACK, DOT_PIXEL_2X2, DRAW_FILL_FULL);
+    // Smile (just a line or arc – here, a line smile)
+    Paint_DrawLine(65, 165, 95, 165, BLACK, DOT_PIXEL_2X2, LINE_STYLE_SOLID);
     return;
 }
 
@@ -158,9 +156,9 @@ void deductHunger () {
   else {
     hunger = hungerLeft;
     getTime (lastFedTime); //this only resets if at least one heart is deducted
-    for (int i = hunger + 1; i <= MAX_HUNGER; i++) {
-        eraseHeartHunger(i, 1);
-    }
+    int cx = (HUNGER_LEFT + HUNGER_RIGHT) / 2 + (HEART_DISTANCE * heartNumber);
+    int cy = (HUNGER_TOP + HUNGER_BOTTOM) / 2;
+    eraseHeartHunger (cx, cy, 1);
   }
 }
 
@@ -192,16 +190,6 @@ void feedPet () {
 }
 
 void addHeartHunger (int cx, int cy, int scale) {
-    // int heartNumber = whichHeart - 1;
-    // int centerX = (HUNGER_LEFT + HUNGER_RIGHT) / 2 + (HEART_DISTANCE*heartNumber);
-    // int centerY = (HUNGER_TOP + HUNGER_BOTTOM) / 2 + (HEART_DISTANCE*heartNumber);
-    // int radius = something();
-
-    // Paint_DrawCircle (centerX, centerY, radius, color, DRAW_FILL_FULL); //left and right top arc
-    // Paint_DrawCircle (); 
-    // Paint_DrawLine (); //the bottom triangle lines
-    // Paint_DrawLine();
-
     const int N = 120;      // number of segments around the heart
     int x_prev = 0, y_prev = 0;
     int x_curr = 0, y_curr = 0;
@@ -235,37 +223,28 @@ void addHeartHunger (int cx, int cy, int scale) {
 
 }
 
-void eraseHeartHunger(int whichHeart, int scale) {
-    int heartNumber = whichHeart - 1;
-    int cx = (HUNGER_LEFT + HUNGER_RIGHT) / 2 + (HEART_DISTANCE * heartNumber);
-    int cy = (HUNGER_TOP + HUNGER_BOTTOM) / 2;
+void eraseHeartHunger(int cx, int cy, int scale) {
+    const int N = 120;  // Number of points around the heart
+    int px[N + 1], py[N + 1];
 
-    int eraseWidth = 32 * scale;
-    int eraseHeight = 30 * scale;
+    // Generate points along the heart shape
+    for (int i = 0; i <= N; i++) {
+        float t = 2 * PI * i / N;
+        float hx = 16 * pow(sin(t), 3);
+        float hy = 13 * cos(t) - 5 * cos(2 * t)
+                 - 2 * cos(3 * t) - cos(4 * t);
+        px[i] = cx + int(hx * scale);
+        py[i] = cy - int(hy * scale);
+    }
 
-    int x1 = cx - eraseWidth / 2;
-    int y1 = cy - eraseHeight / 2;
-    int x2 = cx + eraseWidth / 2;
-    int y2 = cy + eraseHeight / 2;
-
-    Paint_DrawRectangle(x1, y1, x2, y2, WHITE, DRAW_FILL_FULL);
+    // Erase heart by redrawing in background color (e.g., WHITE)
+    for (int i = 1; i <= N; i++) {
+        Paint_DrawLine(cx, cy, px[i - 1], py[i - 1], WHITE, DOT_PIXEL_1X1, LINE_STYLE_SOLID);
+        Paint_DrawLine(cx, cy, px[i], py[i], WHITE, DOT_PIXEL_1X1, LINE_STYLE_SOLID);
+        Paint_DrawLine(px[i - 1], py[i - 1], px[i], py[i], WHITE, DOT_PIXEL_1X1, LINE_STYLE_SOLID);
+    }
 }
 
-
-// void petIsDead () {
-    // Paint_Clear(WHITE);
-    // Paint_DrawString_EN(x, y, "Pet starved and died", &FontXX, color_background, color_foreground);
-    // delay (2000);
-    // Paint_Clear(WHITE);
-    // Paint_DrawString_EN(x, y, "Restarting the game...", &FontXX, color_background, color_foreground);
-
-    // //reset variables
-    // getTime (lastFedTime);
-    // hunger = 4;
-
-    // drawPet();
-    // drawHungerBar();
-// }
 void petIsDead() {
     Paint_Clear(WHITE);
     Paint_DrawString_EN(10, 50, "Pet starved and died", &Font16, WHITE, RED);
@@ -280,5 +259,4 @@ void petIsDead() {
     drawPet();
     drawHungerBar();
 }
-//==============================================
 
